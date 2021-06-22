@@ -27,8 +27,21 @@ namespace DurableFunction.Client
         public static async Task<SortJob> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context, ILogger logger)
         {
             var outputs = new SortJob();
+            if (!context.IsReplaying)
+            {
+                logger.LogInformation("Collecting the input...");
+            }
             var sortJobData = context.GetInput<int[]>();
             outputs = await context.CallActivityAsync<SortJob>(Constants.SortActivityName, sortJobData);
+            if (!context.IsReplaying)
+            {
+                logger.LogInformation("Message sent to Activity function...");
+            }
+
+            if (outputs == null)
+            {
+                context.SetCustomStatus("Activity Function failed...");
+            }
             return outputs;
         }
 
